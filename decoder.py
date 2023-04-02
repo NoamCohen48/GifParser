@@ -211,7 +211,7 @@ def decode_image_data(gif_stream: typing.BinaryIO, gif_object: Gif) -> None:
 
     while (number_of_sub_block_bytes := gif_stream.read(1)) != b'\x00':
         compressed_sub_block = (gif_stream.read(int.from_bytes(number_of_sub_block_bytes, "little"))).hex()
-        res = decode_lzw(compressed_sub_block, math.pow(2, lzw_minimum_code_size))
+        res = decode_lzw(compressed_sub_block,  lzw_minimum_code_size)
         bytes_image_data += res
 
     if current_image.local_color_table_flag == 1:
