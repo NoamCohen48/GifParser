@@ -203,24 +203,24 @@ def decode_local_color_table(gif_stream: typing.BinaryIO, gif_object: Gif) -> No
 
 def decode_image_data(gif_stream: typing.BinaryIO, gif_object: Gif) -> None:
     """decode image data"""
-    bytes_image_data = b''
+    res = b''
     current_image = gif_object.images[-1]
 
     lzw_minimum_code_size = int.from_bytes(gif_stream.read(1), "little")
     index_length = math.ceil(math.log(lzw_minimum_code_size + 1)) + 1
 
+    compressed_sub_block = ""
     while (number_of_sub_block_bytes := gif_stream.read(1)) != b'\x00':
-        compressed_sub_block = (gif_stream.read(int.from_bytes(number_of_sub_block_bytes, "little"))).hex()
-        res = decode_lzw(compressed_sub_block,  lzw_minimum_code_size)
-        bytes_image_data += res
+        compressed_sub_block += (gif_stream.read(int.from_bytes(number_of_sub_block_bytes, "little"))).hex()
+    res = decode_lzw(compressed_sub_block,  lzw_minimum_code_size)
 
     if current_image.local_color_table_flag == 1:
         local_color_table = gif_object.local_color_tables[-1]
     else:
         local_color_table = gif_object.global_color_table
 
-    for pos in range(0, len(bytes_image_data), index_length):
-        current_index = int((bytes_image_data[pos:pos + index_length]), 2)
+    for pos in range(0, len(res), index_length):
+        current_index = int((res[pos:pos + index_length]), 2)
         # save the index
         current_image.image_indexes.append(current_index)
         # convert index to rgb

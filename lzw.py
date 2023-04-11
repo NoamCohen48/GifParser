@@ -208,7 +208,7 @@ def update_code_size1(table_size, code_size):
     :param writing_size:
     :return: writing_size:
     """
-    if table_size == int(math.pow(2, code_size)):
+    if table_size == int(math.pow(2, code_size)) and code_size < 12:
         return code_size + 1
     return code_size
 
@@ -265,16 +265,34 @@ def decode_lzw(compressed_data, lzw_minimum_code_size):
         next_el = get_decode_element(stream, reading_size, pos)
         if next_el == end_of_information_code:
             break
+        if next_el == clear_code:
+            # need to check what happend with the current elemend and to add limitation of 12 size writing size
+
+            k = table[curr_el][0]
+            decompressed_data += index_to_binary(table[curr_el] + "," + k, writing_size)
+
+            table = initialize_code_table(int(color_table_size), True)
+            reading_size = lzw_minimum_code_size + 1
+            pos = pos - reading_size
+            curr_el = get_decode_element(stream, reading_size, pos)
+            pos = pos - reading_size
+
+            continue
+
         if next_el in table:
             decompressed_data += index_to_binary(table[next_el], writing_size)
             k = table[next_el][0]
         else:
             k = table[curr_el][0]
             decompressed_data += index_to_binary(table[curr_el] + "," + k, writing_size)
+
+        if pos < 1000:
+            pass
         table[len(table)] = table[curr_el] + "," + k
         reading_size = update_code_size1(len(table), reading_size)
         pos = pos - reading_size
         curr_el = next_el
+
 
     return decompressed_data
 
