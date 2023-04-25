@@ -51,13 +51,6 @@ def decode_gif(io: typing.BinaryIO) -> Gif:
                 decode_plain_text(gif_stream, gif_object)
 
         elif prefix is BlockPrefix.ImageDescriptor:
-            if len(gif_object.images) == 11:
-               i = 0
-            a = Image()
-            # for create new image we need to restart the creating image every time
-            a.image_indexes = []
-            a.image_data = []
-            gif_object.images.append(a)
             decode_image_descriptor(gif_stream, gif_object)
 
             # Check if there is a Local color table for this image.
@@ -151,7 +144,8 @@ def decode_graphic_control_extension(gif_stream: BitStream, gif_object: Gif) -> 
 
 
 def decode_image_descriptor(gif_stream: BitStream, gif_object: Gif) -> None:
-    current_image = gif_object.images[LAST_ELEMENT]
+    current_image = Image()
+    gif_object.images.append(current_image)
 
     current_image.left = gif_stream.read_unsigned_integer(2, 'bytes')
     current_image.top = gif_stream.read_unsigned_integer(2, 'bytes')
@@ -168,6 +162,7 @@ def decode_image_descriptor(gif_stream: BitStream, gif_object: Gif) -> None:
     gif_stream.skip(2, 'bits')
 
     current_image.size_of_local_color_table = gif_stream.read_unsigned_integer(3, 'bits')
+
 
 
 def decode_local_color_table(gif_stream: BitStream, gif_object: Gif) -> None:
@@ -187,10 +182,10 @@ def decode_image_data(gif_stream: BitStream, gif_object: Gif) -> None:
     lzw_minimum_code_size = gif_stream.read_unsigned_integer(1, 'bytes')
     index_length = math.ceil(math.log(lzw_minimum_code_size + 1)) + 1
 
-    compressed_sub_block = b''
+    compressed_sub_block = ""
 
     while (number_of_sub_block_bytes := gif_stream.read_unsigned_integer(1, 'bytes')) != 0:
-        compressed_sub_block += gif_stream.read_bytes(number_of_sub_block_bytes)
+        compressed_sub_block += gif_stream.read_hex(number_of_sub_block_bytes, 'bytes')
     res, index_length = decode_lzw(compressed_sub_block, lzw_minimum_code_size)
 
     if current_image.local_color_table_flag:
