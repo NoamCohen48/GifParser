@@ -3,6 +3,8 @@ import math
 from bitstring import ConstBitStream
 import binascii
 
+from utils import chunker
+
 
 # the example we using here:
 #       https://giflib.sourceforge.net/whatsinagif/bits_and_bytes.html
@@ -56,19 +58,11 @@ def update_code_size(table_size, code_size):
 
 def flip_data(compress_data):
     """
-    flip the data doing reverse to the compressed data - ךooking at each element of size 8 bits
-
-    :param compress_data:
-    :return: fliped_data
+    flip the data doing reverse to the compressed data - looking at each element of size 8 bits
     """
-    fliped_data = ''
-    length = len(compress_data) / 8
-    for i in range(int(length)):
-        fliped_data += compress_data[-8:]
-        compress_data = compress_data[:-8]
-
-    bytes_object = fliped_data.encode("utf-8")
-
+    chunked = [x for x in chunker(8, compress_data)]
+    flipped_data = ''.join(reversed(chunked))
+    bytes_object = flipped_data.encode("utf-8")
     return bytes_object
 
 
