@@ -56,7 +56,7 @@ def update_code_size(table_size, code_size):
 
 def flip_data(compress_data):
     """
-    flip the data doing reverse to the compressed data - ךooking at each element of size 8 bits
+    flip the data doing reverse to the compressed data - looking at each element of size 8 bits
 
     :param compress_data:
     :return: fliped_data
@@ -169,7 +169,7 @@ def encode(uncompressed_data, color_table_size):
     compress_data = convert_int_to_bits(end_of_information_code, writing_size) + compress_data
 
     # fill zeros to be represented by 8 bits and flip the data
-    x = flip_data(fill_zero_bytes(compress_data))
+    x = flip_data(fill_zero_bytes(compress_data).decode('utf-8'))
     return x
 
 
@@ -307,8 +307,10 @@ def decode_lzw(compressed_data, lzw_minimum_code_size):
 if __name__ == '__main__':
     # Open the file in binary mode -  after the data compressed
     input_bytes = '0x24929248924A492249292489200092248002492400049490001252491249492449252491249'
+
     print("0x{:x}".format(int(encode(input_bytes, 4), 2)))
 
     # the output will be the indexes of the colors in color table in this example the index's length will be 3
     # therefore, we expect to see:"001 001 001 001 001 010 010 010 ..." equivalent to 1,1,1,1,1,2,2,2..
-    print(decode_lzw(bytes('0x8c2d99872a1cdc33a00275ec95faa8de608c04914c01', 'utf-8'), 4))
+    val = bytes('0x8c2d99872a1cdc33a00275ec95faa8de608c04914c01', 'utf-8')
+    print(decode_lzw(val, 4))
