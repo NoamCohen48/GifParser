@@ -41,16 +41,20 @@ def initialize_code_table(color_table_size, is_decode):
     return table
 
 
-def update_code_size(table_size, code_size):
+def update_code_size(table_size, code_size, writing=True):
     """
-    check if we need to increase the writing window if the table size +1 is representing binary more than the
-    current writing window size
-    :param table_size:
-    :param writing_size:
-    :return: writing_size:
+    Check if we need to increase the writing window size based on the table size and code size.
+    :param table_size: Current size of the table
+    :param code_size: Current size of the code
+    :param writing: True if writing window increase is allowed, False = reading
+    :return: Updated code size
     """
-    if table_size >= int(math.pow(2, code_size)) + 1:
-        return code_size + 1
+    if writing:
+        if table_size >= int(math.pow(2, code_size)) + 1 and code_size < 12:
+            return code_size + 1
+    else:
+        if table_size == int(math.pow(2, code_size)) and code_size < 12:
+            return code_size + 1
     return code_size
 
 
@@ -118,7 +122,7 @@ def encode(uncompressed_data, color_table_size):
     # color table size +1 => it's for the end_of_information_code and clear_code,
     # (color table size +1) + 1 => it's for situations that the number isn't pow of two then we need added a bit for
     # riding the numbers (in our example = 3).
-    # notice the reding size in constant - not change
+    # notice the reding size in constant
     reading_size = math.ceil(math.log2(color_table_size)) + 1
 
 
@@ -126,7 +130,7 @@ def encode(uncompressed_data, color_table_size):
 
     # if the next item in the table will need to be writen with more bit change now the writing size
     # because we're adding more indexes to the table, and now we need more bits to represent the numbers
-    writing_size = update_code_size(len(table), reading_size)
+    writing_size = update_code_size(len(table), reading_size, writing=True)
 
     # add the start of reading (in our example = 4)
     clear_code = table[str(len(table) - 2)]
@@ -155,7 +159,7 @@ def encode(uncompressed_data, color_table_size):
                 compress_data = convert_int_to_bits(clear_code, 12) + compress_data
                 reading_size = math.ceil(math.log2(color_table_size)) + 1
                 table = initialize_code_table(color_table_size, False)
-                writing_size = update_code_size(len(table), reading_size)
+                writing_size = update_code_size(len(table), reading_size, writing=True)
                 curr_el = next_el
                 continue
             # add the new concat to the table
@@ -164,7 +168,7 @@ def encode(uncompressed_data, color_table_size):
             compress_data = convert_int_to_bits(table[curr_el], writing_size) + compress_data
 
             # checking if to change the writing size
-            writing_size = update_code_size(len(table), writing_size)
+            writing_size = update_code_size(len(table), writing_size, writing=True)
             curr_el = next_el
 
 
@@ -177,9 +181,9 @@ def encode(uncompressed_data, color_table_size):
     # x = flip_data_enc(fill_zero_bytes(compress_data).decode('utf-8'))
     # fill zeros to be represented by 8 bits and flip the data
     x = flip_data(fill_zero_bytes(compress_data).decode('utf-8'))
-    hex_str = binascii.hexlify(int(x, 2).to_bytes((len(x) + 7) // 8, 'big')).decode()
-    res = bytes.fromhex(hex_str)
-    return res
+    # hex_str = binascii.hexlify(int(x, 2).to_bytes((len(x) + 7) // 8, 'big')).decode()
+    # res = bytes.fromhex(hex_str)
+    return x
 
 
 def get_decode_element(stream, reading_size, pos):
@@ -209,19 +213,6 @@ def fill_zero_hexa(hexa_data, binary_data_len):
     return hexa_data
 
 
-def update_code_size1(table_size, code_size):
-    """
-    check if we need to increase the writing window if the table size +1 is representing binary more than the
-    current writing window size
-    :param table_size:
-    :param writing_size:
-    :return: writing_size:
-    """
-    if table_size == int(math.pow(2, code_size)) and code_size < 12:
-        return code_size + 1
-    return code_size
-
-
 def get_first_element(concats_colors):
     comma_index = concats_colors.find(",")
     if comma_index != -1:
@@ -249,7 +240,7 @@ def decode_lzw(compressed_data, lzw_minimum_code_size):
     reading_size = writing_size + 1
     color_table_size = math.pow(2, lzw_minimum_code_size)
     table = initialize_code_table(int(color_table_size), True)
-    reading_size = update_code_size1(len(table), reading_size)
+    reading_size = update_code_size(len(table), reading_size, writing=False)
 
     # add the start of reading
     clear_code = int(table[len(table) - 2])
@@ -303,8 +294,12 @@ def decode_lzw(compressed_data, lzw_minimum_code_size):
             decompressed_data += index_to_binary(table[curr_el] + "," + k, writing_size)
 
         table[len(table)] = table[curr_el] + "," + k
-        reading_size = update_code_size1(len(table), reading_size)
+        reading_size = update_code_size(len(table), reading_size, writing=False)
         pos = pos - reading_size
         curr_el = next_el
 
     return decompressed_data, writing_size
+
+if __name__ == "__main__":
+    encode(b'' , 256)
+
