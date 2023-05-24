@@ -11,14 +11,18 @@ def index_from_data(image_data, color_table):
     size_of_index = math.ceil(math.log(len(color_table), 2)) + 1
     indexes = [convert_int_to_bits(color_table.index(color), size_of_index) for color in image_data]
     res = b''.join(indexes)
-    hex_string ='0x' + hex(int(res.decode('utf-8'), 2))[2:]
+    # hex_string ='0x' + hex(int(res.decode('utf-8'), 2))[2:]
+    #
+    binary_string = res.decode('utf-8')
+    hex_string = '0x' + format(int(binary_string, 2), '0{0}x'.format(len(binary_string) // 4))
+
     return hex_string
 
 
 
 
 def main():
-    with open("gif_tests/giphy2.gif", "rb") as gif_file:
+    with open("gif_tests/test.gif", "rb") as gif_file:
         gif: Gif = decode_gif(gif_file)
     image = gif.images[0]
 
@@ -40,8 +44,6 @@ def main():
     for i in range(max(len(hex_str), len(hex_string))):
         if hex_str[i] != hex_string[i]:
             print(i)
-
-
 
 if __name__ == '__main__':
     main()

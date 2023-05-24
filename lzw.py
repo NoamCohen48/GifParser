@@ -16,7 +16,8 @@ def write_compressed_data(result: [str], code_size: int):
 
 
 def convert_int_to_bits(number, code_size):
-    return bytes((bin(number)[2:]).zfill(code_size), 'utf-8')
+    res = bytes((bin(number)[2:]).zfill(code_size), 'utf-8')
+    return res
 
 
 def initialize_code_table(color_table_size, is_decode):
@@ -110,6 +111,7 @@ def encode(uncompressed_data, color_table_size):
       #2  |  2
       #3  |  3
 
+    :param reset_size:
     :param uncompressed_data:
     :param color_table_size:
     :return: compress_data:
@@ -276,7 +278,6 @@ def decode_lzw(compressed_data, lzw_minimum_code_size):
         if next_el == end_of_information_code:
             break
         if next_el == clear_code:
-
             table = initialize_code_table(int(color_table_size), True)
             reading_size = lzw_minimum_code_size + 1
             pos = pos - reading_size

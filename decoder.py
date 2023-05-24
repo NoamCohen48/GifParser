@@ -186,7 +186,7 @@ def decode_image_data(gif_stream: BitStreamReader, gif_object: Gif) -> None:
     if not compressed_sub_block:
         current_image.img = None
         return
-
+    current_image.image_compres_data = compressed_sub_block
     res, index_length = decode_lzw(compressed_sub_block, current_image.lzw_minimum_code_size)
 
     if current_image.local_color_table_flag:

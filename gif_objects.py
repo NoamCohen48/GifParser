@@ -72,6 +72,7 @@ class Image(Differentiable):
     width: int = field(default=None)
     height: int = field(default=None)
 
+    image_compres_data = field(default=None)
     interlace_flag: bool = field(default=None)
     sort_flag: bool = field(default=None)
     reserved: int = field(default=None)
