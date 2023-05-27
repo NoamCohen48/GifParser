@@ -17,4 +17,4 @@ def profile(tool: Literal['snakeviz', 'tuna'], function: Callable, *args, **kwar
 
 
 if __name__ == '__main__':
-    profile('tuna', main.main, "../gif_tests/giphy.gif", show_image=False)
+    profile('tuna', main.main, "../gif_tests/test4.gif", show_image=False)

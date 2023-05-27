@@ -18,6 +18,14 @@ def write_compressed_data(result: [str], code_size: int):
 
 
 def insert_to_stream(stream: BitArray, value: int, bits: int) -> None:
+    """
+    prepend takes a lot of time, optional implementation is to add to the end the bits, but add right rotation of bits%8
+    (under the assumption of bits < 16)
+    :param stream:
+    :param value:
+    :param bits:
+    :return:
+    """
     stream.prepend(f"uint:{bits}={value}")
 
 
@@ -59,12 +67,6 @@ def flip_data(compress_data):
 
 
 def get_encode_element(stream, reading_size):
-    """
-    the next element represent in as string number . the riding size in constant
-    :param stream:
-    :param reading_size:
-    :return: element
-    """
     value: int = stream.read(f"uint:{reading_size}")
     return str(value)
 

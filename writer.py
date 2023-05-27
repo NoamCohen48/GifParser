@@ -16,6 +16,7 @@ def convert_int_to_bits(number, code_size):
 
 def index_from_data(image_data, color_table):
     size_of_index = math.ceil(math.log(len(color_table), 2)) + 1
+    # TODO: switch to use bitstring.stream
     indexes = [convert_int_to_bits(color_table.index(color), size_of_index) for color in image_data]
     res = b''.join(indexes)
     hex_string = '0x' + hex(int(res.decode('utf-8'), 2))[2:]
