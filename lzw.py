@@ -2,7 +2,7 @@ import io
 import math
 
 import bitstring
-from bitstring import ConstBitStream
+from bitstring import ConstBitStream, BitArray
 import binascii
 
 
@@ -17,8 +17,8 @@ def write_compressed_data(result: [str], code_size: int):
     return bytes(output, "utf-8")
 
 
-def convert_int_to_bits(number, code_size):
-    return bytes((bin(number)[2:]).zfill(code_size), 'utf-8')
+def insert_to_stream(stream: BitArray, value: int, bits: int) -> None:
+    stream.prepend(f"uint:{bits}={value}")
 
 
 def initialize_code_table(color_table_size, is_decode):
@@ -65,8 +65,8 @@ def get_encode_element(stream, reading_size):
     :param reading_size:
     :return: element
     """
-    element = stream.read('bin' + str(reading_size))
-    return str(int(element, 2))
+    value: int = stream.read(f"uint:{reading_size}")
+    return str(value)
 
 
 def fill_zero_bytes(compress_data):
@@ -76,7 +76,7 @@ def fill_zero_bytes(compress_data):
     :return: compress_data
     """
     if zero_fill := len(compress_data) % 8:
-        compress_data = convert_int_to_bits(0, 8 - zero_fill) + compress_data
+        compress_data = insert_to_stream(0, 8 - zero_fill) + compress_data
     return compress_data
 
 
@@ -117,9 +117,9 @@ def encode(uncompressed_data, color_table_size):
     clear_code = table[str(len(table) - 2)]
     #  add the enf of reading (in our example = 5)
     end_of_information_code = table[str(len(table) - 1)]
-    compress_data = b''
+    compress_data = BitArray()
     #  add clear code according the reading size (in our example = 4)
-    compress_data += convert_int_to_bits(clear_code, writing_size)
+    insert_to_stream(compress_data, clear_code, writing_size)
 
     length = stream.length
 
@@ -136,8 +136,8 @@ def encode(uncompressed_data, color_table_size):
             curr_el = current_and_next
         else:
             if len(table) == 4096:
-                compress_data = convert_int_to_bits(table[curr_el], 12) + compress_data
-                compress_data = convert_int_to_bits(clear_code, 12) + compress_data
+                insert_to_stream(compress_data, table[curr_el], 12)
+                insert_to_stream(compress_data, clear_code, 12)
                 reading_size = math.ceil(math.log2(color_table_size)) + 1
                 table = initialize_code_table(color_table_size, False)
                 writing_size = update_code_size(len(table), reading_size)
@@ -146,24 +146,24 @@ def encode(uncompressed_data, color_table_size):
             # add the new concat to the table
             table[current_and_next] = len(table)
             # write the compressed value to the output
-            compress_data = convert_int_to_bits(table[curr_el], writing_size) + compress_data
+            insert_to_stream(compress_data, table[curr_el], writing_size)
 
             # checking if to change the writing size
             writing_size = update_code_size(len(table), writing_size)
             curr_el = next_el
 
     # add the last element to the output
-    compress_data = convert_int_to_bits(table[curr_el], writing_size) + compress_data
+    insert_to_stream(compress_data, table[curr_el], writing_size)
 
     # add the end to the output - for inform that is the end ot the data
-    compress_data = convert_int_to_bits(end_of_information_code, writing_size) + compress_data
+    insert_to_stream(compress_data, end_of_information_code, writing_size)
 
-    # x = flip_data_enc(fill_zero_bytes(compress_data).decode('utf-8'))
-    # fill zeros to be represented by 8 bits and flip the data
-    x = flip_data(fill_zero_bytes(compress_data).decode('utf-8'))
-    hex_str = binascii.hexlify(int(x, 2).to_bytes((len(x) + 7) // 8, 'big')).decode()
-    res = bytes.fromhex(hex_str)
-    return res
+    # fill zeros to align pos to 8
+    insert_to_stream(compress_data, 0, 8 - compress_data.len % 8)
+
+    compress_data.byteswap()
+
+    return compress_data.bytes
 
 
 def get_decode_element(stream, reading_size) -> int:

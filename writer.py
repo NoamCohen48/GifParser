@@ -3,12 +3,15 @@ import math
 from BitStream import BitStreamWriter
 from enums import BlockPrefix
 from gif_objects import Gif, ApplicationExtension, GraphicControlExtension, Image, CommentExtension, PlainTextExtension
-from lzw import convert_int_to_bits, encode
+from lzw import insert_to_stream, encode
 from utils import chunker
 
 ApplicationExtensionBlockSize = 11
 GraphicControlExtensionBlockSize = 4
 PlainTextExtensionBlockSize = 4
+
+def convert_int_to_bits(number, code_size):
+    return bytes((bin(number)[2:]).zfill(code_size), 'utf-8')
 
 
 def index_from_data(image_data, color_table):
