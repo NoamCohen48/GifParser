@@ -55,9 +55,12 @@ def decode_gif(io: typing.BinaryIO) -> Gif:
 
             decode_image_data(gif_stream, gif_object)
 
-            if gif_object.graphic_control_extensions[
-                gif_object.images[LAST_ELEMENT].index_graphic_control_ex].disposal == 3:
+            last_graphic_control_index = gif_object.images[LAST_ELEMENT].index_graphic_control_ex
+            last_graphic_control_disposal = gif_object.graphic_control_extensions[last_graphic_control_index].disposal
+            if last_graphic_control_disposal == 3:
                 gif_object.images.append(gif_object.images[PENULTIMATE])
+            elif last_graphic_control_disposal == 2:
+                add_background_frame(gif_object)
 
         elif prefix is BlockPrefix.NONE:
             raise Exception("prefix is incorrect")
@@ -99,6 +102,28 @@ def decode_global_color_table(gif_stream: BitStreamReader, gif_object: Gif) -> N
     """
     gif_object.global_color_table = [gif_stream.read_bytes(3) for _ in range(
         int(gif_object.global_color_table_size))]
+
+
+def add_background_frame(gif_object: Gif):
+    prev_image = gif_object.images[-1]
+    current_image = Image()
+    current_image.index_graphic_control_ex = None
+
+    current_image.left = prev_image.left
+    current_image.top = prev_image.top
+    current_image.width = prev_image.width
+    current_image.height = prev_image.height
+
+    current_image.local_color_table_flag = False
+    current_image.interlace_flag = False
+    current_image.sort_flag = False
+    current_image.reserved = 0
+    current_image.size_of_local_color_table = 0
+
+    background_color: bytes = gif_object.global_color_table[gif_object.background_color_index]
+    current_image.image_data = [background_color] * prev_image.width * prev_image.height
+
+    gif_object.images.append(current_image)
 
 
 def decode_application_extension(gif_stream: BitStreamReader, gif_object: Gif) -> None:
@@ -189,14 +214,14 @@ def decode_image_data(gif_stream: BitStreamReader, gif_object: Gif) -> None:
         return
 
     res, index_length = decode_lzw(compressed_sub_block, current_image.lzw_minimum_code_size)
-    
+
     current_image.raw_indexes = compressed_sub_block
-    
+
     if current_image.local_color_table_flag:
         local_color_table = gif_object.local_color_tables[LAST_ELEMENT]
     else:
         local_color_table = gif_object.global_color_table
-    
+
     for pos in range(0, len(res), index_length):
         current_index = int((res[pos:pos + index_length]), 2)
 
@@ -217,13 +242,14 @@ def create_img(gif_object: Gif, image_data: list[str], width: int, height: int) 
     current_image = gif_object.images[LAST_ELEMENT]
     #  for all the images except the first
     gif_size = current_image.width * current_image.height
-    assert gif_size == len(image_data), f"size mismatch: gif_size {gif_size} does not match the length of image_information {len(image_data)}"
+    assert gif_size == len(
+        image_data), f"size mismatch: gif_size {gif_size} does not match the length of image_information {len(image_data)}"
 
     if len(gif_object.images) > 1:
         # create new image with -1
         arr = [TRANSPARENT_VALUE] * gif_object.width * gif_object.height
         start_current_image = current_image.top * gif_object.width + current_image.left
-           
+
         # add the colors from the image data that we extract from lzw
         rows = 0
         for pos in range(0, len(image_data), width):
