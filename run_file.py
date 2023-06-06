@@ -1,5 +1,6 @@
 import pickle
 from pathlib import Path
+import time
 
 from decoder import decode_gif
 from gif_objects import Gif
@@ -19,9 +20,9 @@ def save_gif_to_pickle(path: Path, gif: Gif) -> None:
     print("saved new pickle")
 
 
-def read_gif(path: Path) -> Gif:
+def read_gif(path: Path, create_images: bool) -> Gif:
     with open(path.with_suffix(".gif"), "rb") as gif_file:
-        gif = decode_gif(gif_file)
+        gif = decode_gif(gif_file, create_images)
     print("decoded gif")
     return gif
 
@@ -33,7 +34,7 @@ def write_gif2(path: Path, gif: Gif) -> None:
     print("wrote gif")
 
 
-def main(filename: str, *, show_image: bool = False):
+def main(filename: str, *, show_image: bool = False, create_images: bool = False):
     path = Path(filename)
 
     if path.with_suffix(".pickle").exists():
@@ -41,13 +42,13 @@ def main(filename: str, *, show_image: bool = False):
         if choice == "y":
             gif = load_gif_from_pickle(path)
         elif choice == "n":
-            gif = read_gif(path)
+            gif = read_gif(path, create_images)
             save_gif_to_pickle(path, gif)
         else:
             print("write y or n in lower case, bro")
             return
     else:
-        gif = read_gif(path)
+        gif = read_gif(path, create_images)
         save_gif_to_pickle(path, gif)
 
     if show_image:
@@ -59,4 +60,14 @@ def main(filename: str, *, show_image: bool = False):
 
 
 if __name__ == '__main__':
-    main("gif_tests/test5.gif", show_image=False)
+    start_time = time.time()
+
+    for i in ["all disposal 2 and shifted.gif"]:
+        main("gif_tests/" + i, show_image=False, create_images=True)
+
+    # Your program code here
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+
+    print(f"Program execution time: {execution_time} seconds")

@@ -1,9 +1,7 @@
 import typing
-from pprint import pprint
 
 from PIL import Image as Image_PIL
 from attrs import define, field
-from deepdiff import DeepDiff
 
 
 class IncorrectFileFormat(Exception):
@@ -11,30 +9,15 @@ class IncorrectFileFormat(Exception):
         super().__init__(message)
 
 
-class DifferentClasses(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-
-
-class Differentiable:
-    def diff(self, other):
-        if type(self) != type(other):
-            raise DifferentClasses(f"different classes, this: {type(self)}, other: {type(other)}")
-        return DeepDiff(self, other)
-
-    def print_diff(self, other):
-        pprint(self.diff(other))
-
-
 @define
-class ApplicationExtension(Differentiable):
+class ApplicationExtension:
     application_name: str | None = None
     identify: str | None = None
     data: bytes | None = None
 
 
 @define
-class GraphicControlExtension(Differentiable):
+class GraphicControlExtension:
     disposal: int = field(default=None)
     reserved: int = field(default=None)
     user_input_flag: bool = field(default=None)
@@ -44,7 +27,7 @@ class GraphicControlExtension(Differentiable):
 
 
 @define
-class PlainTextExtension(Differentiable):
+class PlainTextExtension:
     top: int = field(default=None)
     left: int = field(default=None)
     width: int = field(default=None)
@@ -63,7 +46,7 @@ class CommentExtension:
 
 
 @define
-class Image(Differentiable):
+class Image:
     image_data: list[bytes] = field(factory=list, repr=False)
     raw_data: list[bytes] = field(factory=list, repr=False)
     raw_indexes: bytes = field(factory=bytes, repr=False)
@@ -82,18 +65,16 @@ class Image(Differentiable):
     background_color_index: int = field(default=None)
     size_of_local_color_table: int = field(default=None)
 
-    # we think we don't need it
     img: Image_PIL.Image = field(default=None)
 
-    # for post-processing only
     local_color_table: list[bytes] = field(default=None)
     lzw_minimum_code_size: int = field(default=None)
 
-    index_graphic_control_ex: int = field(default=None)
+    index_graphic_control_ex: int | None = field(default=None)
 
 
 @define
-class Gif(Differentiable):
+class Gif:
     structure: list[typing.Any] = field(factory=list, repr=False)
     images: list[Image] = field(factory=list, repr=False)
     applications_extensions: list[ApplicationExtension] = field(factory=list, repr=False)

@@ -49,18 +49,23 @@ def update_code_size(table_size, code_size):
 
 def flip_data(compress_data):
     """
-    flip the data doing reverse to the compressed data - ךooking at each element of size 8 bits
+    Flip the data by reversing the compressed data, looking at each element of size 8 bits.
 
-    :param compress_data:
-    :return: fliped_data
+    :param compress_data: The compressed data as bytes
+    :return: Flipped data as bytes
     """
-    fliped_data = ''
-    length = len(compress_data) / BYTE_LEN
-    for i in range(int(length)):
+    chunks = [compress_data[i : i + BYTE_LEN] for i in range(0, len(compress_data), BYTE_LEN)]
+    reversed_chunks = chunks[::-1]
+    return b''.join(reversed_chunks)
+
+    fliped_data = b''
+    length = len(compress_data) // BYTE_LEN
+    for i in range(length):
         fliped_data += compress_data[-BYTE_LEN:]
         compress_data = compress_data[:-BYTE_LEN]
 
-    return fliped_data.encode("utf-8")
+    return fliped_data[::-1]
+
 
 
 def get_encode_element(stream, reading_size):
@@ -171,10 +176,10 @@ def encode(uncompressed_data, color_table_size):
     clear_code = table[str(len(table) - 2)]
     #  add the enf of reading (in our example = 5)
     end_of_information_code = table[str(len(table) - 1)]
-    compress_data = b''
+    compress_data = BitArray()
     #  add clear code according the reading size (in our example = 4)
 
-    compress_data += convert_int_to_bits(clear_code, writing_size)
+    compress_data.prepend(convert_int_to_bits(clear_code, writing_size))
 
     length = stream.length
 
@@ -191,8 +196,8 @@ def encode(uncompressed_data, color_table_size):
             curr_el = current_and_next
         else:
             if len(table) == RESET_SIZE:
-                compress_data = convert_int_to_bits(table[curr_el], MAX_WRITING_SIZE) + compress_data
-                compress_data = convert_int_to_bits(clear_code, MAX_WRITING_SIZE) + compress_data
+                compress_data.prepend(convert_int_to_bits(table[curr_el], MAX_WRITING_SIZE))
+                compress_data.prepend(convert_int_to_bits(clear_code, MAX_WRITING_SIZE))
                 table = initialize_code_table(color_table_size, False)
                 writing_size = update_code_size(len(table), reading_size)
                 curr_el = next_el
@@ -201,7 +206,7 @@ def encode(uncompressed_data, color_table_size):
                 # add the new concat to the table
             table[current_and_next] = len(table)
             # write the compressed value to the output
-            compress_data = convert_int_to_bits(table[curr_el], writing_size) + compress_data
+            compress_data.prepend(convert_int_to_bits(table[curr_el], writing_size))
 
             # checking if to change the writing size
             writing_size = update_code_size(len(table), writing_size)
@@ -209,13 +214,13 @@ def encode(uncompressed_data, color_table_size):
 
     # add the last element to the output
 
-    compress_data = convert_int_to_bits(table[curr_el], writing_size) + compress_data
+    compress_data.prepend(convert_int_to_bits(table[curr_el], writing_size))
     # add the end to the output - for inform that is the end ot the data
-    compress_data = convert_int_to_bits(end_of_information_code, writing_size) + compress_data
+    compress_data.prepend(convert_int_to_bits(end_of_information_code, writing_size))
 
     # flipped_data = flip_data_enc(fill_zero_bytes(compress_data).decode('utf-8'))
     # fill zeros to be represented by 8 bits and flip the data
-    flipped_data = flip_data(fill_zero_bytes(compress_data).decode('utf-8'))
+    flipped_data = flip_data(fill_zero_bytes(compress_data.bytes))
 
     return bitstring_to_bytes(flipped_data)
 
