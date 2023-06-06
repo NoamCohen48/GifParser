@@ -204,7 +204,7 @@ def decode_local_color_table(gif_stream: BitStreamReader, gif_object: Gif) -> No
     current_image.local_color_table = colors_array
 
 
-def decode_image_data(gif_stream: BitStreamReader, gif_object: Gif) -> None:
+def decode_image_data(gif_stream: BitStreamReader, gif_object: Gif, create_images: bool) -> None:
     current_image = gif_object.images[LAST_ELEMENT]
     current_image.lzw_minimum_code_size = gif_stream.read_unsigned_integer(1, 'bytes')
 
