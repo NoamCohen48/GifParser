@@ -298,7 +298,6 @@ def create_img(gif_object: Gif, image_data: list[str], width: int, height: int, 
             hex_color = rgb_array[column * gif_object.width + row]
             r, g, b = int(hex_color[1:3], 16), int(hex_color[3:5], 16), int(hex_color[5:7], 16)
             pixels[row, column] = (r, g, b)
-
     current_image.img = img
 
 

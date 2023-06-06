@@ -62,7 +62,7 @@ def main(filename: str, *, show_image: bool = False, create_images: bool = False
 if __name__ == '__main__':
     start_time = time.time()
 
-    for i in ["all disposal 2 and shifted.gif"]:
+    for i in ["giphy10"]:
         main("gif_tests/" + i, show_image=False, create_images=True)
 
     # Your program code here
